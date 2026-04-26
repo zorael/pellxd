@@ -49,10 +49,8 @@ fn main() -> process::ExitCode {
     print_banner();
 
     if cli.version {
-        println!(
-            "This project is licensed under {}.",
-            defaults::program_metadata::LICENSE
-        );
+        let license = defaults::program_metadata::LICENSE.replace('-', " ");
+        println!("This project is licensed under {license}.");
         return process::ExitCode::SUCCESS;
     }
 
