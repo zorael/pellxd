@@ -510,7 +510,10 @@ fn handle_low_reading(
         // (provided startup_duration > 0)
         if settings.verbose {
             println!();
-            logging::tsprintln!(settings.disable_timestamps, "-- NEW LOW --");
+            logging::tsprintln!(
+                settings.disable_timestamps,
+                "LOW read, waiting startup window..."
+            );
         }
 
         ctx.time_of_startup = Some(ctx.now);
@@ -518,6 +521,11 @@ fn handle_low_reading(
     };
 
     if time_of_startup.instant.elapsed() >= *settings.monitor.startup_window {
+        if settings.verbose {
+            println!();
+            logging::tsprintln!(settings.disable_timestamps, "LOW confirmed");
+        }
+
         // Startup succeeded, can notify success
         let result = notify::send_to_all(
             notifiers,
@@ -559,7 +567,7 @@ fn handle_high_reading(
     if reading_changed || is_first_iteration {
         if settings.verbose {
             println!();
-            logging::tsprintln!(settings.disable_timestamps, "-- NEW HIGH --");
+            logging::tsprintln!(settings.disable_timestamps, "HIGH");
         }
 
         if let Some(t) = ctx.time_of_startup
@@ -612,7 +620,6 @@ fn handle_high_reading(
                     result.total
                 );
             }
-
         }
     }
 }
