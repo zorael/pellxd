@@ -511,7 +511,6 @@ fn handle_low_reading(
         if settings.verbose {
             println!();
             logging::tsprintln!(settings.disable_timestamps, "-- NEW LOW --");
-            println!();
         }
 
         ctx.time_of_startup = Some(ctx.now);
@@ -520,10 +519,6 @@ fn handle_low_reading(
 
     if time_of_startup.instant.elapsed() >= *settings.monitor.startup_window {
         // Startup succeeded, can notify success
-        if settings.verbose {
-            println!();
-        }
-
         let result = notify::send_to_all(
             notifiers,
             settings,
@@ -538,10 +533,6 @@ fn handle_low_reading(
                 result.success,
                 result.total
             );
-        }
-
-        if settings.verbose {
-            println!();
         }
 
         ctx.startup_succeeded = true;
@@ -599,10 +590,6 @@ fn handle_high_reading(
                 );
             }
         }
-
-        if settings.verbose {
-            println!();
-        }
     } else {
         // We have been HIGH for a while, it may be time for a reminder
         let at_least_one_notifier_due_for_reminder = notifiers
@@ -626,9 +613,6 @@ fn handle_high_reading(
                 );
             }
 
-            if settings.verbose {
-                println!();
-            }
         }
     }
 }
