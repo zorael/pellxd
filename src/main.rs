@@ -148,7 +148,12 @@ fn main() -> process::ExitCode {
         return process::ExitCode::from(defaults::exit_codes::NO_NOTIFIERS_CONFIGURED);
     }
 
-    logging::tsprintln!(settings.disable_timestamps, "Initialization complete.");
+    logging::tsprintln!(
+        settings.disable_timestamps,
+        "Initialization complete, {} notifier(s) configured.",
+        notifiers.len()
+    );
+
     display_settings(&settings);
 
     logging::tsprintln!(settings.disable_timestamps, "Entering monitor loop...");
@@ -535,11 +540,18 @@ fn handle_low_reading(
         );
 
         if result.success != result.total {
+            println!();
             logging::tseprintln!(
                 settings.disable_timestamps,
                 "Failed to send some startup success notifications: {}/{} succeeded",
                 result.success,
                 result.total
+            );
+        } else if settings.verbose {
+            println!();
+            logging::tsprintln!(
+                settings.disable_timestamps,
+                "Notifications successfully sent (startup success)"
             );
         }
 
@@ -584,17 +596,29 @@ fn handle_high_reading(
                     result.success,
                     result.total
                 );
+            } else if settings.verbose {
+                logging::tsprintln!(
+                    settings.disable_timestamps,
+                    "Notifications successfully sent (startup failure)"
+                );
             }
         } else {
             // We just randomly went HIGH for no reason, this is an alert
             let result = notify::send_to_all(notifiers, settings, ctx, notify::MessageType::Alert);
 
             if result.success != result.total {
+                println!();
                 logging::tseprintln!(
                     settings.disable_timestamps,
                     "Failed to send some alert notifications: {}/{} succeeded",
                     result.success,
                     result.total
+                );
+            } else if settings.verbose {
+                println!();
+                logging::tsprintln!(
+                    settings.disable_timestamps,
+                    "Notifications successfully sent (alert)"
                 );
             }
         }
@@ -613,11 +637,18 @@ fn handle_high_reading(
                 notify::send_to_all(notifiers, settings, ctx, notify::MessageType::Reminder);
 
             if result.success != result.total {
+                println!();
                 logging::tseprintln!(
                     settings.disable_timestamps,
                     "Failed to send some reminder notifications: {}/{} succeeded",
                     result.success,
                     result.total
+                );
+            } else if settings.verbose {
+                println!();
+                logging::tsprintln!(
+                    settings.disable_timestamps,
+                    "Notifications successfully sent (reminder)"
                 );
             }
         }
