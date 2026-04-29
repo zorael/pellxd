@@ -528,7 +528,7 @@ fn handle_low_reading(
     if time_of_startup.instant.elapsed() >= *settings.monitor.startup_window {
         if settings.verbose {
             println!();
-            logging::tsprintln!(settings.disable_timestamps, "LOW confirmed");
+            logging::tsprintln!(settings.disable_timestamps, "LOW state detected");
         }
 
         // Startup succeeded, can notify success
@@ -579,7 +579,7 @@ fn handle_high_reading(
     if reading_changed || is_first_iteration {
         if settings.verbose {
             println!();
-            logging::tsprintln!(settings.disable_timestamps, "HIGH");
+            logging::tsprintln!(settings.disable_timestamps, "HIGH state detected");
         }
 
         if let Some(t) = ctx.time_of_startup
