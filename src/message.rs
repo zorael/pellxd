@@ -113,6 +113,14 @@ fn compose_common(ctx: &context::Context, header: &str, body: &str, footer: &str
 /// Replaces placeholders in a message string with values from the passed context.
 ///
 /// The currently supported placeholders are:
+/// - `{fuzzy_low}`: The time of the most recent transition to
+///   `source::Reading::Low` in a human-friendly format.
+/// - `{fuzzy_high}`: The time of the most recent transition to
+///   `source::Reading::High` in a human-friendly format.
+/// - `{fuzzy_state_change}`: The time of the most recent transition to either
+///   `source::Reading::Low` or `source::Reading::High` in a human-friendly format.
+/// - `{fuzzy_startup}`: The time of the start of the most recent startup attempt
+///   in a human-friendly format.
 /// - `{fuzzy_now}`: The current time in a human-friendly format that may be
 ///   a mixture of date and time, depending how long ago the time was.
 ///   In the case of the current time, this will always be a timestamp without date.
@@ -125,12 +133,6 @@ fn compose_common(ctx: &context::Context, header: &str, body: &str, footer: &str
 /// - `{date_then}`: The date of the context's `now` field, in `YYYY-MM-DD` format.
 /// - `{name}`: The name of the program.
 /// - `{version}`: The version of the program.
-/// - `{fuzzy_low}`: The time of the most recent transition to
-///   `source::Reading::Low` in a human-friendly format.
-/// - `{fuzzy_high}`: The time of the most recent transition to
-///   `source::Reading::High` in a human-friendly format.
-/// - `{fuzzy_state_change}`: The time of the most recent transition to either
-///   `source::Reading::Low` or `source::Reading::High` in a human-friendly format.
 ///
 /// # Parameters
 /// - `body`: The message string potentially containing placeholders to replace.
@@ -140,46 +142,59 @@ fn compose_common(ctx: &context::Context, header: &str, body: &str, footer: &str
 /// # Returns
 /// The message string with placeholders replaced with values from the context
 /// and/or with such based on the current time and date.
-fn replace_placeholders(body: &str, ctx: &context::Context) -> String {
-    let mut out = body.to_string();
-
-    if let Some(went_low_at) = &ctx.went_low_at {
-        out = out.replace("{fuzzy_low}", &time::fuzzy_datestamp_of(&went_low_at.wall));
-    }
-
-    if let Some(went_high_at) = &ctx.went_high_at {
-        out = out.replace(
-            "{fuzzy_high}",
-            &time::fuzzy_datestamp_of(&went_high_at.wall),
-        );
-    }
-
-    if let Some(time_of_state_change) = &ctx.time_of_state_change {
-        out = out.replace(
-            "{fuzzy_state_change}",
-            &time::fuzzy_datestamp_of(&time_of_state_change.wall),
-        );
-    }
-
-    if let Some(time_of_startup) = &ctx.time_of_startup {
-        out = out.replace(
-            "{fuzzy_startup}",
-            &time::fuzzy_datestamp_of(&time_of_startup.wall),
-        );
-    }
-
+fn replace_placeholders(body: &str, context: &context::Context) -> String {
     let now = chrono::Local::now();
+    let mut out = String::with_capacity(body.len());
+    let mut chunks = body.split('{');
 
-    out = out.replace("{fuzzy_now}", &time::fuzzy_datestamp_of(&now));
-    out = out.replace("{time_now}", &now.format("%H:%M").to_string());
-    out = out.replace("{date_now}", &now.format("%Y-%m-%d").to_string());
-    out = out.replace("{fuzzy_then}", &time::fuzzy_datestamp_of(&ctx.now.wall));
-    out = out.replace("{time_then}", &ctx.now.wall.format("%H:%M").to_string());
-    out = out.replace("{date_then}", &ctx.now.wall.format("%Y-%m-%d").to_string());
-    out = out.replace("{name}", defaults::program_metadata::NAME);
-    out = out.replace("{version}", defaults::program_metadata::VERSION);
+    if let Some(first) = chunks.next() {
+        out.push_str(first);
+    }
+
+    for chunk in chunks {
+        let Some((pre, post)) = chunk.split_once('}') else {
+            out.push('{');
+            out.push_str(chunk);
+            continue;
+        };
+
+        let replacement = match pre {
+            "fuzzy_low" => datestamp_of_or_empty_string(context.went_low_at),
+            "fuzzy_high" => datestamp_of_or_empty_string(context.went_high_at),
+            "fuzzy_state_change" => datestamp_of_or_empty_string(context.time_of_state_change),
+            "fuzzy_startup" => datestamp_of_or_empty_string(context.time_of_startup),
+            "fuzzy_now" => time::fuzzy_datestamp_of(&now),
+            "time_now" => now.format("%H:%M").to_string(),
+            "date_now" => now.format("%Y-%m-%d").to_string(),
+            "fuzzy_then" => time::fuzzy_datestamp_of(&context.now.wall),
+            "time_then" => context.now.wall.format("%H:%M").to_string(),
+            "date_then" => context.now.wall.format("%Y-%m-%d").to_string(),
+            "name" => defaults::program_metadata::NAME.to_string(),
+            "version" => defaults::program_metadata::VERSION.to_string(),
+            _ => {
+                out.push('{');
+                out.push_str(pre);
+                out.push('}');
+                out.push_str(post);
+                continue;
+            }
+        };
+
+        out.push_str(&replacement);
+        out.push_str(post);
+    }
 
     out
+}
+
+/// Helper for [`replace_placeholders`] to get a datestamp string for an
+/// `Option<time::Timestamp>`, or an empty string if the option is `None`.
+fn datestamp_of_or_empty_string(when: Option<time::Timestamp>) -> String {
+    if let Some(t) = when {
+        time::fuzzy_datestamp_of(&t.wall)
+    } else {
+        String::new()
+    }
 }
 
 /// Unescapes a string, replacing some escape sequences with their literal characters.
