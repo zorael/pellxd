@@ -333,7 +333,7 @@ sudo systemctl edit pellxd.service
 
 [Service]
 ExecStart=
-ExecStart=/home/user/src/pellxd/target/release/pellxd --verbose --config /home/user/.config/pellxd.toml
+ExecStart=/home/user/src/pellxd/target/release/pellxd --verbose --config=/home/user/.config/pellxd.toml
 
 ### Edits below this comment will be discarded
 ### [...]
