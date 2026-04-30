@@ -143,7 +143,6 @@ fn compose_common(ctx: &context::Context, header: &str, body: &str, footer: &str
 /// The message string with placeholders replaced with values from the context
 /// and/or with such based on the current time and date.
 fn replace_placeholders(body: &str, context: &context::Context) -> String {
-    let now = chrono::Local::now();
     let mut out = String::with_capacity(body.len());
     let mut chunks = body.split('{');
 
@@ -163,9 +162,9 @@ fn replace_placeholders(body: &str, context: &context::Context) -> String {
             "fuzzy_high" => datestamp_of_or_empty_string(context.went_high_at),
             "fuzzy_state_change" => datestamp_of_or_empty_string(context.time_of_state_change),
             "fuzzy_startup" => datestamp_of_or_empty_string(context.time_of_startup),
-            "fuzzy_now" => time::fuzzy_datestamp_of(&now),
-            "time_now" => now.format("%H:%M").to_string(),
-            "date_now" => now.format("%Y-%m-%d").to_string(),
+            "fuzzy_now" => time::fuzzy_datestamp_of(&chrono::Local::now()),
+            "time_now" => chrono::Local::now().format("%H:%M").to_string(),
+            "date_now" => chrono::Local::now().format("%Y-%m-%d").to_string(),
             "fuzzy_then" => time::fuzzy_datestamp_of(&context.now.wall),
             "time_then" => context.now.wall.format("%H:%M").to_string(),
             "date_then" => context.now.wall.format("%Y-%m-%d").to_string(),
