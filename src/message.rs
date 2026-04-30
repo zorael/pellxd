@@ -98,8 +98,11 @@ fn compose_common(ctx: &context::Context, header: &str, body: &str, footer: &str
     }
 
     msg.push_str(header);
-    msg.push('\n');
-    msg.push_str(body);
+
+    if !body.is_empty() {
+        msg.push('\n');
+        msg.push_str(body);
+    }
 
     if !footer.is_empty() {
         msg.push('\n');
